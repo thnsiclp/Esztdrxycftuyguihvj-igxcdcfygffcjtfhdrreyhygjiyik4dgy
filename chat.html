@@ -1,67 +1,73 @@
-<!doctype html>
-<html lang="ja">
+<?=$msg?>
 
- <head>
-　<!-- Firebaseライブラリを読み込む バージョンは2.3.2という古いのを使っています -->
-  <script src="https://cdn.firebase.com/js/client/2.3.2/firebase.js"></script>
+<form onsubmit="sendChatData();return false">
+<table summary="送信フォーム">
+<tr><th style="width:150px">名前(10文字以内)</th><td><input type="text" name="name" value="<?=@$name?>" style="width:100%" maxlength="10" required /></td></tr>
+<tr><th>文章(50文字以内)</th><td><input type="text" name="text" value="" style="width:100%" maxlength="50" required /></td></tr>
+</table>
+<p><input type="submit" value="送信" class="button" /></p>
+</form>
 
-  <script src="https://code.jquery.com/jquery-1.9.1.js"></script>
-  <script src="chat.js"></script>
+<table summary="チャット">
+<tr><th style="width:150px">名前</th><th style="width:180px">投稿日時</th><th>文章</th></tr>
+<tbody id="board">
+<?foreach($_chat as $val){?>
+<tr><td><?=htmlspecialchars($val["name"])?></td><td><?=substr($val["date"],5,14)?></td><td><?=htmlspecialchars($val["text"])?></td></tr>
+<?}?>
+</tbody>
+</table>
 
-  <!-- ↓ 先ほど入手したコード　↓ -->
-  <script src="https://www.gstatic.com/firebasejs/3.7.8/firebase-app.js"></script>
-  <script>
-      // Initialize Firebase
-      var config = {
-        apiKey: "各自",
-        authDomain: "各自",
-        databaseURL: "https://各自",
-        storageBucket: "各自",
-        messagingSenderId: "各自"
-      };
-      firebase.initializeApp(config);
-  </script>
-  <!-- ↑ 先ほど入手したコード ↑ -->
+<script type="text/javascript">
 
-  <!-- ↓ 少ないのでcssベタ張り ↓ -->
-  <style>
-    ul > li:first-child {
-     color: black;
-     font-size: 25px;
-    }
-    ul > li:nth-child(2n) {
-     color: blue;
-    }
-    ul > li:nth-child(2n):before {
-     content:"ユーザー名："
-    }
-  </style>
-  <!-- ↑ 少ないのでcssベタ張り ↑ -->
+// 名前か文章にカーソルをフォーカス
+if(document.getElementsByName("text")[0]) document.getElementsByName("text")[0].focus();
+if(document.getElementsByName("name")[0]) document.getElementsByName("name")[0].focus();
 
- </head>
+// xmlHttpObjectの作成
+function createXMLHttpRequest(){
+	var xmlHttpObject = null;
+	if(window.XMLHttpRequest){
+		xmlHttpObject = new XMLHttpRequest();
+	}else if(window.ActiveXObject){
+		try{
+			xmlHttpObject = new ActiveXObject("Msxml2.XMLHTTP");
+		}catch(e){
+			try{
+				xmlHttpObject = new ActiveXObject("Microsoft.XMLHTTP");
+			}catch(e){
+				return null;
+			}
+		}
+	}
+	return xmlHttpObject;
+}
 
- <body>
+// チャットの内容の取得
+function loadChatData(){
+	xmlHttpObject = createXMLHttpRequest();
+	xmlHttpObject.onreadystatechange = displayHtml;
+	xmlHttpObject.open("GET","/loadChatData.php",true);
+	xmlHttpObject.send(null);
+}
 
-  <div>
-   <!-- 投稿者 -->
-   <div>
-    <p>ユーザ名</p>
-    <textarea name="" id="jsi-name" cols="10" rows="1"></textarea>
-   </div>
+// 新たな書き込みがあった場合に表示する
+function displayHtml(){
+	if((xmlHttpObject.readyState == 4) && (xmlHttpObject.status == 200) && xmlHttpObject.responseText){
+		document.getElementById("board").innerHTML = xmlHttpObject.responseText + document.getElementById("board").innerHTML;
+	}
+}
 
-   <!-- メッセージを打ち込む部分 -->
-   <div>
-    <p>内容</p>
-    <textarea name="" id="jsi-msg" cols="30" rows="4"></textarea>
-   </div>
-  </div>
+// チャットに書き込みをする
+function sendChatData(){
+	xmlHttpObject = createXMLHttpRequest();
+	xmlHttpObject.open("POST","/sendChatData.php",true);
+	xmlHttpObject.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+	xmlHttpObject.send("name="+encodeURIComponent(document.getElementsByName("name")[0].value)+"&text="+encodeURIComponent(document.getElementsByName("text")[0].value));
+	document.getElementsByName("text")[0].value = "";
+	loadChatData();
+}
 
-  <!-- メッセージを送る部分 -->
-  <button name="button" id="jsi-button">send message!</button>
+// 2秒ごとにチャットの内容を取りに行く
+setInterval('loadChatData()',2000);
 
-  <!-- チャット内容が動的に生成される部分 -->
-  <ul id="jsi-board" style="list-style:none;">
-    <li>〜チャット内容〜</li>
-  </ul>
- </body>
-</html>
+</script>
