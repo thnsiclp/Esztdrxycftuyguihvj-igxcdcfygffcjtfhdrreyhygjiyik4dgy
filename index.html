@@ -1,32 +1,30 @@
-<!-- クライアントサイド (public/index.html) -->
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <head>
-    <title>Socket.IO chat</title>
-    <style>
-      /* スタイルはここに追加 */
-    </style>
-  </head>
-  <body>
-    <ul id="messages"></ul>
-    <form action="">
-      <input id="m" autocomplete="off" /><button>Send</button>
-    </form>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<head>
+    <title>Simple Proxy Site</title>
     <script>
-      $(function () {
-        var socket = io();
-        $('form').submit(function(e){
-          e.preventDefault();
-          socket.emit('chat message', $('#m').val());
-          $('#m').val('');
-          return false;
-        });
-        socket.on('chat message', function(msg){
-          $('#messages').append($('<li>').text(msg));
-        });
-      });
+        function setProxy() {
+            var proxy = 'http://211.128.96.206:80';
+            fetch('https://example.com', {
+                method: 'GET',
+                mode: 'no-cors',
+                cache: 'no-cache',
+                credentials: 'same-origin',
+                headers: {
+                    'Proxy-Server': proxy
+                },
+                redirect: 'follow',
+                referrerPolicy: 'no-referrer'
+            })
+            .then(response => response.text())
+            .then(data => document.getElementById('content').innerHTML = data)
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
     </script>
-  </body>
+</head>
+<body onload="setProxy()">
+    <div id="content"></div>
+</body>
 </html>
